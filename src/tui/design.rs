@@ -64,7 +64,7 @@ pub fn right_box_specs<'a>(choosen : &'a str)-> Block<'a>{
 
 pub fn draw_terminal(terminal: &mut Terminal<CrosstermBackend<Stdout>>,
 selected_index:usize)->io::Result<()>{
-    terminal.draw(|mut f| {
+    terminal.draw(|f| {
         let chunks = frame_divider();
         let mut state = ListState::default();
         state.select(Some(selected_index.min(2)));
