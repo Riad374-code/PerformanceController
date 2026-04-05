@@ -12,8 +12,9 @@ A Rust-based system performance monitoring tool with an AI-powered chat interfac
 ## Prerequisites
 
 - [Rust](https://www.rust-lang.org/tools/install) (edition 2024)
-- NVIDIA GPU + CUDA Toolkit (for GPU monitoring)
-- An AI API key (OpenAI-compatible endpoint)
+- NVIDIA GPU(Future plans cover non-NVIDIA guys) + CUDA Toolkit (for GPU monitoring)
+- An AI API key (OpenAI-compatible endpoint, recommended to use Ollama via localhost)
+
 
 ## Quick Start
 
