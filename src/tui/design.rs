@@ -8,6 +8,7 @@ use ratatui::{
 use std::io;
 use std::io::Stdout;
 use std::rc::Rc;
+use crate::tui::chat::{chat_box, ChatState};
 
 pub fn init() -> Terminal<CrosstermBackend<Stdout>> {
         let stdout = io::stdout();
@@ -27,7 +28,7 @@ pub fn frame_divider()-> Rc<[Rect]>{
 
 //Box arrangements
 pub fn left_box_select<'a>()-> List<'a>{
-    let selections= vec!["CPU","GPU","RAM"];
+    let selections= vec!["CPU","GPU","Chat","RAM"];
     let list = List::new(selections)
         .style(Color::White)
         .highlight_style(Style::new().yellow().italic())
@@ -63,7 +64,7 @@ pub fn right_box_specs<'a>(choosen : &'a str)-> Block<'a>{
 
 
 pub fn draw_terminal(terminal: &mut Terminal<CrosstermBackend<Stdout>>,
-selected_index:usize)->io::Result<()>{
+selected_index:usize,chat_state: ChatState)->io::Result<()>{
     terminal.draw(|f| {
         let chunks = frame_divider();
         let mut state = ListState::default();
@@ -75,12 +76,18 @@ selected_index:usize)->io::Result<()>{
         let selected_title = match selected_index {
             0 => "CPU",
             1 => "GPU",
+            2 => "Chat",
             _ => "RAM",
         };
 
         let right_block= right_box_specs(selected_title);
-        let content = Paragraph::new(format!("{} details go here...", selected_title)).block(right_block);
-        f.render_widget(content, chunks[1]);
+        if selected_index==2{
+            chat_box(f,chunks[1],&chat_state)
+        }else {
+            let content = Paragraph::new(format!("{} details go here...", selected_title)).block(right_block);
+            f.render_widget(content, chunks[1]);
+        }
+
     })?;
 
     Ok(())
