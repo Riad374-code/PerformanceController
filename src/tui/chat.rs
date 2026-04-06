@@ -3,9 +3,9 @@ use crossterm::event::{Event, KeyCode, KeyEventKind};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use dotenvy::dotenv;
-use ratatui::widgets::Block;
-use ratatui_core::layout::{Constraint, Direction, Layout, Rect};
-use ratatui_core::terminal::Frame;
+use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
+use ratatui::Frame;
 
 #[derive(Serialize, Deserialize, Debug,Clone)]
 pub enum Role {
@@ -108,11 +108,21 @@ pub fn chat_box(frame: &mut Frame, area: Rect, state: &ChatState) {
             Role::AI => "AI",
             Role::User => "You",
         };
-        format!("{}: {}",who,m.message);
-    }).collect::<Vec<()>>().join("\n");
+        format!("{}: {}",who,m.message)
+    }).collect::<Vec<String>>().join("\n");
 
-    let chat_view = Layout::default()
+    let chat_view = Paragraph::new(chat_hist).block(Block::default().borders(Borders::ALL)).wrap(Wrap { trim: true });
 
+    let mut input="Sending";
+    if state.sending {
+        input="Input (sending...)";
+    }else{
+        input = "Input (not sending...)";
+    }
+
+    let input_view=Paragraph::new(input).block(Block::default().borders(Borders::ALL));
+    frame.render_widget(chat_view, chunks[0]);
+    frame.render_widget(input_view, chunks[1]);
 
 }
 
@@ -140,7 +150,9 @@ pub async fn chat_event(
                 state.error = None;
 
                 match chat_ai(Message{message:text,role:Role::User},state.history.clone()).await {
-                    Ok(_) => state.input.clear(),
+                    Ok((.., history)) => {
+                        state.history= history;
+                        state.input.clear()},
                     Err(e) => state.error = Some(e.to_string()),
                 }
 

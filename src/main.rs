@@ -5,25 +5,27 @@ mod tui;
 use tui::chat::{Message,chat_ai};
 use std::io;
 use std::time::Duration;
-use tui::design;
+use tui::{design,chat};
 use crossterm::event;
 use crossterm::event::{Event, KeyCode, KeyEventKind};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
-use crate::tui::chat::Role;
+use crate::tui::chat::{ChatState, Role};
 //-> std::io::Result<()>
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
     enable_raw_mode()?;
-    
+
     let mut terminal = design::init();
     let mut selected_index: usize =0;
-    
+    let mut chat_state=ChatState::default();
+
     loop {
-        design::draw_terminal(&mut terminal, selected_index)?;
-    
+        design::draw_terminal(&mut terminal, selected_index,chat_state.clone())?;
+
         if event::poll(Duration::from_millis(150))? {
-            if let Event::Key(key) = event::read()? {
+            let event = event::read()?;
+            if let Event::Key(key) = event{
                 if key.kind==KeyEventKind::Press {
                     match key.code {
                         KeyCode::Up => {
@@ -35,7 +37,16 @@ async fn main() -> io::Result<()> {
                         }
                         KeyCode::Down => {
                             if selected_index==2{
-                                selected_index=0;
+                                if let Event::Key(key) = event {
+                                    if key.code == KeyCode::Esc {
+                                        selected_index = 0; // Go back to CPU
+                                        continue;
+                                    }
+                                }
+
+                                // Otherwise, send the event to your chat logic
+                                // Note: chat_event is async, so we await it here
+                                chat::chat_event(event, &mut chat_state).await.ok();
                             }else {
                                 selected_index = (selected_index + 1).min(2);
                             }
@@ -47,7 +58,7 @@ async fn main() -> io::Result<()> {
             }
         }
     }
-    
+
     disable_raw_mode()?;
     let mut hist = vec![];
     let message = Message {
