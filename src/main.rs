@@ -14,42 +14,41 @@ use crate::tui::chat::Role;
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
-    // enable_raw_mode()?;
-    //
-    // let mut terminal = design::init();
-    // let mut selected_index: usize =0;
-    //
-    // loop {
-    //     design::draw_terminal(&mut terminal, selected_index)?;
-    //
-    //     if event::poll(Duration::from_millis(150))? {
-    //         if let Event::Key(key) = event::read()? {
-    //             if key.kind==KeyEventKind::Press {
-    //                 match key.code {
-    //                     KeyCode::Up => {
-    //                         if selected_index > 0 {
-    //                             selected_index -= 1;
-    //                         }else{
-    //                             selected_index=2;
-    //                         }
-    //                     }
-    //                     KeyCode::Down => {
-    //                         if selected_index==2{
-    //                             selected_index=0;
-    //                         }else {
-    //                             selected_index = (selected_index + 1).min(2);
-    //                         }
-    //                     }
-    //                     KeyCode::Char('q') => break,
-    //                     _ => {}
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
-    //
-    // disable_raw_mode()?;
-    // Ok(())
+    enable_raw_mode()?;
+    
+    let mut terminal = design::init();
+    let mut selected_index: usize =0;
+    
+    loop {
+        design::draw_terminal(&mut terminal, selected_index)?;
+    
+        if event::poll(Duration::from_millis(150))? {
+            if let Event::Key(key) = event::read()? {
+                if key.kind==KeyEventKind::Press {
+                    match key.code {
+                        KeyCode::Up => {
+                            if selected_index > 0 {
+                                selected_index -= 1;
+                            }else{
+                                selected_index=2;
+                            }
+                        }
+                        KeyCode::Down => {
+                            if selected_index==2{
+                                selected_index=0;
+                            }else {
+                                selected_index = (selected_index + 1).min(2);
+                            }
+                        }
+                        KeyCode::Char('q') => break,
+                        _ => {}
+                    }
+                }
+            }
+        }
+    }
+    
+    disable_raw_mode()?;
     let mut hist = vec![];
     let message = Message {
         message: "Hello, how are you?".to_string(),

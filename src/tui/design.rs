@@ -75,6 +75,7 @@ selected_index:usize)->io::Result<()>{
         let selected_title = match selected_index {
             0 => "CPU",
             1 => "GPU",
+            2 => "Chat",
             _ => "RAM",
         };
 

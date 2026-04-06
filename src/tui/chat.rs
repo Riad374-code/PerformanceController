@@ -1,7 +1,11 @@
 use std::env;
+use crossterm::event::{Event, KeyCode, KeyEventKind};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use dotenvy::dotenv;
+use ratatui::widgets::Block;
+use ratatui_core::layout::{Constraint, Direction, Layout, Rect};
+use ratatui_core::terminal::Frame;
 
 #[derive(Serialize, Deserialize, Debug,Clone)]
 pub enum Role {
@@ -28,6 +32,14 @@ pub struct AssistantMessage {
     pub created_at: String,
     pub message:Message,
     pub done: bool,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct ChatState {
+    pub input: String,
+    pub history: Vec<Message>,
+    pub sending: bool,
+    pub error: Option<String>,
 }
 
 pub async fn chat_ai(
@@ -81,4 +93,62 @@ pub async fn chat_ai(
     });
 
     Ok((response.message, messages))
+}
+
+pub fn chat_box(frame: &mut Frame, area: Rect, state: &ChatState) {
+
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Min(1), Constraint::Length(3)])
+        .split(area);
+
+
+    let chat_hist= state.history.iter().map(|m|{
+        let who= match m.role{
+            Role::AI => "AI",
+            Role::User => "You",
+        };
+        format!("{}: {}",who,m.message);
+    }).collect::<Vec<()>>().join("\n");
+
+    let chat_view = Layout::default()
+
+
+}
+
+pub async fn chat_event(
+    event: Event,
+    state: &mut ChatState,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if let Event::Key(key) = event {
+        if key.kind != KeyEventKind::Press {
+            return Ok(());
+        }
+
+        match key.code {
+            KeyCode::Char(c) => state.input.push(c),
+            KeyCode::Backspace => {
+                state.input.pop();
+            }
+            KeyCode::Enter => {
+                let text = state.input.trim().to_string();
+                if text.is_empty() {
+                    return Ok(());
+                }
+
+                state.sending = true;
+                state.error = None;
+
+                match chat_ai(Message{message:text,role:Role::User},state.history.clone()).await {
+                    Ok(_) => state.input.clear(),
+                    Err(e) => state.error = Some(e.to_string()),
+                }
+
+                state.sending = false;
+            }
+            _ => {}
+        }
+    }
+
+    Ok(())
 }
