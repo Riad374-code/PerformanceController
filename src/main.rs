@@ -33,7 +33,9 @@ async fn main() -> io::Result<()> {
                     if key.code == KeyCode::Esc {
                         selected_index = 0; // Go back to CPU
                         continue;
-                    }
+                    }else if key.code==KeyCode::Char('q') {
+                        break;
+                    }else {}
                 }
 
                 // Otherwise, send the event to your chat logic
@@ -60,6 +62,6 @@ async fn main() -> io::Result<()> {
         }
     }
 
-
+    disable_raw_mode()?;
     Ok(())
 }

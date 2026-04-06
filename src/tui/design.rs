@@ -28,7 +28,7 @@ pub fn frame_divider()-> Rc<[Rect]>{
 
 //Box arrangements
 pub fn left_box_select<'a>()-> List<'a>{
-    let selections= vec!["CPU","GPU","RAM"];
+    let selections= vec!["CPU","GPU","Chat","RAM"];
     let list = List::new(selections)
         .style(Color::White)
         .highlight_style(Style::new().yellow().italic())
@@ -87,7 +87,7 @@ selected_index:usize,chat_state: ChatState)->io::Result<()>{
             let content = Paragraph::new(format!("{} details go here...", selected_title)).block(right_block);
             f.render_widget(content, chunks[1]);
         }
-        
+
     })?;
 
     Ok(())
