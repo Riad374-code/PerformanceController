@@ -1,6 +1,7 @@
 mod logging_init;
 mod component_details;
 mod tui;
+mod trainable_model_integ;
 
 use tui::chat::{Message,chat_ai};
 use std::io;
@@ -28,7 +29,7 @@ async fn main() -> io::Result<()> {
             let ev = event::read()?;
 
             // If we are on the Chat tab, let the chat handle the keyboard
-            
+
                 // Handle exiting chat mode (e.g., Esc key)
 
             if let Event::Key(key) = ev {
