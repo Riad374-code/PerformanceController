@@ -28,21 +28,36 @@ async fn main() -> io::Result<()> {
             let ev = event::read()?;
 
             // If we are on the Chat tab, let the chat handle the keyboard
-            if selected_index == 2 {
-                state.select(Some(selected_index));
+            if state.selected() == Some(2) {
                 // Handle exiting chat mode (e.g., Esc key)
+                
                 if let Event::Key(key) = ev {
-                    if key.code == KeyCode::Esc {
-                        selected_index = 0; // Go back to CPU
-                        continue;
-                    }else if key.code==KeyCode::Char('q') {
-                        break;
-                    }else {}
+                    if key.code== KeyCode::Up{
+                        let i = match state.selected() {
+                            Some(i) => if i == 0 { 3 } else { i - 1 },
+                            None => 0,
+                        };
+                        state.select(Some(i));
+                    }else if key.code==KeyCode::Down{
+                        let i = match state.selected() {
+                            Some(i) => if i >= 3 { 0 } else { i + 1 },
+                            None => 0,
+                        };
+                        state.select(Some(i));
+                    }else if key.code==KeyCode::Enter{
+                        if key.code == KeyCode::Esc {
+                            state.select(Some(0)); // Go back to CPU
+                            continue;
+                        }else if key.code==KeyCode::Char('q') {
+                            break;
+                        }
+                        // Otherwise, send the event to your chat logic
+                        // Note: chat_event is async, so we await it here
+                        chat::chat_event(ev, &mut chat_state).await.ok();
+                    }
                 }
 
-                // Otherwise, send the event to your chat logic
-                // Note: chat_event is async, so we await it here
-                chat::chat_event(ev, &mut chat_state).await.ok();
+                
             } else {
                 // Standard menu navigation
                 if let Event::Key(key) = ev {
