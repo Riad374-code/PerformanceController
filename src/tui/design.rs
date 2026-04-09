@@ -84,7 +84,6 @@ pub fn draw_terminal(
             2 => "Chat",
             _ => "RAM",
         };
-
         let right_block= right_box_specs(selected_title);
         if state.selected()==Some(2){
             chat_box(f,chunks[1],&chat_state)
@@ -92,7 +91,6 @@ pub fn draw_terminal(
             let content = Paragraph::new(format!("{} details go here...", selected_title)).block(right_block);
             f.render_widget(content, chunks[1]);
         }
-
     })?;
 
     Ok(())
