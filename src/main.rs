@@ -9,6 +9,7 @@ use tui::{design,chat};
 use crossterm::event;
 use crossterm::event::{Event, KeyCode, KeyEventKind};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
+use ratatui::widgets::ListState;
 use crate::tui::chat::{ChatState, Role};
 //-> std::io::Result<()>
 
@@ -19,15 +20,16 @@ async fn main() -> io::Result<()> {
     let mut terminal = design::init();
     let mut selected_index: usize =0;
     let mut chat_state=ChatState::default();
-
+    let mut state = ListState::default();
     loop {
-        design::draw_terminal(&mut terminal, selected_index,chat_state.clone())?;
+        design::draw_terminal(&mut terminal,chat_state.clone(),&mut state)?;
 
         if event::poll(Duration::from_millis(50))? {
             let ev = event::read()?;
 
             // If we are on the Chat tab, let the chat handle the keyboard
             if selected_index == 2 {
+                state.select(Some(selected_index));
                 // Handle exiting chat mode (e.g., Esc key)
                 if let Event::Key(key) = ev {
                     if key.code == KeyCode::Esc {
@@ -46,13 +48,18 @@ async fn main() -> io::Result<()> {
                 if let Event::Key(key) = ev {
                     match key.code {
                         KeyCode::Up => {
-                            if selected_index>0{
-                                selected_index-=1;
-                            } else { selected_index=3; }
+                            let i = match state.selected() {
+                                Some(i) => if i == 0 { 3 } else { i - 1 },
+                                None => 0,
+                            };
+                            state.select(Some(i));
                         }
-                        KeyCode::Down => { if selected_index==3{
-                            selected_index=0;
-                        }else { selected_index+=1; }
+                        KeyCode::Down => {
+                            let i = match state.selected() {
+                                Some(i) => if i >= 3 { 0 } else { i + 1 },
+                                None => 0,
+                            };
+                            state.select(Some(i));
                         }
                         KeyCode::Char('q') => break,
                         _ => {}

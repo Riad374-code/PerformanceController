@@ -63,15 +63,20 @@ pub fn right_box_specs<'a>(choosen : &'a str)-> Block<'a>{
 
 
 
-pub fn draw_terminal(terminal: &mut Terminal<CrosstermBackend<Stdout>>,
-selected_index:usize,chat_state: ChatState)->io::Result<()>{
+pub fn draw_terminal(
+    terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+    chat_state: ChatState,
+    state: &mut ListState // Pass by reference!
+) -> io::Result<()> {
     terminal.draw(|f| {
         let chunks = frame_divider();
-        let mut state = ListState::default();
-        state.select(Some(selected_index.min(2)));
 
-        let menu= left_box_select().block(left_box_specs());
-        f.render_stateful_widget(menu, chunks[0], &mut state);
+        // Use state.selected() to drive your logic
+        let selected_index = state.selected().unwrap_or(0);
+
+        let menu = left_box_select().block(left_box_specs());
+        // render_stateful_widget will now correctly update 'state' with scroll offsets
+        f.render_stateful_widget(menu, chunks[0], state);
 
         let selected_title = match selected_index {
             0 => "CPU",
@@ -81,7 +86,7 @@ selected_index:usize,chat_state: ChatState)->io::Result<()>{
         };
 
         let right_block= right_box_specs(selected_title);
-        if selected_index==2{
+        if state.selected()==Some(2){
             chat_box(f,chunks[1],&chat_state)
         }else {
             let content = Paragraph::new(format!("{} details go here...", selected_title)).block(right_block);
