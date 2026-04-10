@@ -37,6 +37,8 @@ cp .env.example .env   # or create .env manually
 cargo build
 ```
 
+> ⚠️ **Not familiar with Rust?** `cargo build` compiles the entire dependency tree from source and can be CPU/memory intensive. If you are not actively developing Rust code, use the **Docker** path instead (see the README) — it avoids a local Rust toolchain altogether.
+
 The `.env` file requires at minimum:
 
 ```env
