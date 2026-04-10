@@ -19,7 +19,9 @@ use trainable_model_integ::gpu_detailing::{get_perandtemp, Errors};
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
-    get_perandtemp().unwrap();
+    if let Err(e) = get_perandtemp() {
+        return Err(io::Error::other(format!("get_perandtemp failed: {:?}", e)));
+    }
     Ok(())
 }
 
