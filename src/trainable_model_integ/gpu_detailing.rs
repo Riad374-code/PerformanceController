@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io;
 use std::path::Path;
+use csv::Writer;
 use nvml_wrapper::error::NvmlError;
 use nvml_wrapper::{Nvml, Device, device,enum_wrappers};
 use nvml_wrapper::struct_wrappers::device::Utilization;
@@ -21,6 +22,7 @@ struct GpuDetailingVisitor {
 pub enum Errors {
     FileIssue(std::io::Error),
     CsvIssue(csv::Error),
+    NvmlIssue(NvmlError),
     InvalidData,
 }
 
@@ -28,7 +30,20 @@ fn create_file()->Result<File,std::io::Error>{
     let file=std::fs::File::create(Path::new(r"C:\Users\user\OneDrive - Baku Higher Oil School\Desktop\MiniRustProjects\PerformanceController\PerformanceController\src\trainable_model_integ\gpu_info.csv")).unwrap();
     Ok(file)
 }
-pub fn file_saver(writable: GpuDetailingVisitor)-> Result<(),Errors>{
+pub fn file_saver(writer:&mut Writer<File>,writable: GpuDetailingVisitor)-> Result<(),Errors>{
+
+    if let Err(e) =writer.serialize(writable){
+        warn!("Could not write the file");
+        return Err(Errors::CsvIssue(e));
+    }
+
+    if let Err(e)=writer.flush(){
+        warn!("Data is not in buffer");
+        return Err(Errors::FileIssue(e));
+    }
+    Ok(())
+}
+fn init_file()-> Result<Writer<File>,Errors>{
     let file=match create_file(){
         Ok(file)=>file,
         _=>{
@@ -36,29 +51,23 @@ pub fn file_saver(writable: GpuDetailingVisitor)-> Result<(),Errors>{
             return Err(Errors::InvalidData);
         }
     };
-    let mut write=csv::Writer::from_writer(file);
+    let  write=csv::Writer::from_writer(file);
 
-    if let Err(e) =write.serialize(writable){
-        warn!("Could not write the file");
-        return Err(Errors::CsvIssue(e));
-    }
-
-    if let Err(e)=write.flush(){
-        warn!("Data is not in buffer");
-        return Err(Errors::FileIssue(e));
-    }
-    Ok(())
+    Ok(write)
 }
 
-fn get_perandtemp()-> Result<(),NvmlError>{
-    let nvml=Nvml::init()?;
-    let device =nvml.device_by_index(0)?;
+pub fn get_perandtemp()-> Result<(),Errors>{
+    let nvml=Nvml::init().unwrap();
+    let device =nvml.device_by_index(0).unwrap();
+    let mut writer = init_file()?;
+
+
     let sensors=enum_wrappers::device::TemperatureSensor::Gpu;
     for _ in 1..1000{
-        let temprature=device.temperature(sensors)?;
-        let power_usage=device.power_usage()?;
-        let usage_perc=device.utilization_rates()?;
-        match file_saver(GpuDetailingVisitor{
+        let temprature=device.temperature(sensors).unwrap();
+        let power_usage=device.power_usage().unwrap();
+        let usage_perc=device.utilization_rates().unwrap();
+        match file_saver(&mut writer,GpuDetailingVisitor{
             temprature,
             power_usage,
             usage_percent:usage_perc.gpu,
@@ -66,7 +75,7 @@ fn get_perandtemp()-> Result<(),NvmlError>{
             Ok(())=>{},
             Err(e)=>{break}
         }
-        std::thread::sleep(std::time::Duration::from_millis(1000));
+        std::thread::sleep(std::time::Duration::from_millis(10));
     }
     Ok(())
 }

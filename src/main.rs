@@ -11,12 +11,19 @@ use crossterm::event;
 use crossterm::event::{Event, KeyCode, KeyEventKind};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use ratatui::widgets::ListState;
+use crate::component_details::gpu;
 use crate::tui::chat::{ChatState, Role};
+
+use trainable_model_integ::gpu_detailing::{get_perandtemp, Errors};
 //-> std::io::Result<()>
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
-    enable_raw_mode()?;
+    get_perandtemp().unwrap();
+    Ok(())
+}
+
+/*enable_raw_mode()?;
 
     let mut terminal = design::init();
     let mut selected_index: usize =0;
@@ -84,6 +91,4 @@ async fn main() -> io::Result<()> {
         }
     }
 
-    disable_raw_mode()?;
-    Ok(())
-}
+    disable_raw_mode()?;*/
