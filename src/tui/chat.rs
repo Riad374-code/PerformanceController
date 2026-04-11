@@ -131,13 +131,7 @@ pub fn chat_box(frame: &mut Frame, area: Rect, state: &ChatState) {
     let chat_hist = state
         .history
         .iter()
-        .map(|m| {
-            let who = match m.role {
-                Role::AI => "AI",
-                Role::User => "You",
-            };
-            format!("{}: {}", who, m.content)
-        })
+        .map(|m| format!("{}: {}", m.role.as_ollama_role(), m.content))
         .collect::<Vec<String>>()
         .join("\n");
 
