@@ -13,7 +13,8 @@ A Rust-based system performance monitoring tool with an AI-powered chat interfac
 
 - [Rust](https://www.rust-lang.org/tools/install) (edition 2024)
 - NVIDIA GPU(Future plans cover non-NVIDIA guys) + CUDA Toolkit (for GPU monitoring)
-- An AI API key (OpenAI-compatible endpoint, recommended to use Ollama via localhost)
+- [Ollama](https://ollama.com) installed locally (for chat)
+- A local Ollama model pulled (for example: `llama3.2`)
 
 
 ## Quick Start
@@ -26,27 +27,32 @@ cd PerformanceController
 # 2. Create your .env file
 cp .env.example .env   # or create it manually (see Configuration)
 
-# 3. Build and run
+# 3. Start Ollama and pull a model (first time only)
+ollama serve
+ollama pull llama3.2
+
+# 4. Build and run
 cargo run --release
 ```
 
-That's it! The application will start and connect to the configured AI endpoint.
+That's it! The application will start and send chat requests to your local Ollama instance.
 
 ## Configuration
 
 Create a `.env` file in the project root:
 
 ```env
-AI_API_KEY="your-api-key-here"
-model="gemini-3-flash"
+OLLAMA_BASE_URL="http://127.0.0.1:11434"
+OLLAMA_MODEL="llama3.2"
 ```
 
 | Variable    | Description                                  | Default          |
 |-------------|----------------------------------------------|------------------|
-| `AI_API_KEY` | Bearer token for the AI API               | *(required)*     |
-| `model`      | Model name used for chat completions      | `gemini-3-flash` |
+| `OLLAMA_BASE_URL` | Base URL of your Ollama server      | `http://127.0.0.1:11434` |
+| `OLLAMA_MODEL`    | Model name used for chat             | `llama3.2` |
+| `model`           | Legacy fallback key for model name   | `llama3.2` |
 
-> The AI endpoint is currently configured to `http://127.0.0.1:8045/v1`. Update `tui/chat.rs` to point to a different host if needed.
+> Chat requests now use Ollama's `/api/chat` endpoint.
 
 ## Integration Guide
 

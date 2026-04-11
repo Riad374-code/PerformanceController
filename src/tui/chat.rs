@@ -13,24 +13,42 @@ pub enum Role {
     AI,
 }
 
+impl Role {
+    fn as_ollama_role(&self) -> &'static str {
+        match self {
+            Role::User => "user",
+            Role::AI => "assistant",
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Message {
-    pub message: String,
+    pub content: String,
     // can be used validator, Only User or AI
     pub role: Role,
 }
 
-#[derive(Deserialize, Debug)]
-pub struct ChatResponse {
-    choices: Vec<AssistantMessage>,
+impl Message {
+    fn take_role(role: &Role) -> &'static str {
+        role.as_ollama_role()
+    }
 }
 
-#[derive(Deserialize, Debug, Clone)]
-pub struct AssistantMessage {
+#[derive(Serialize, Debug)]
+pub struct OllamaChatRequest {
+    pub model: String,
+    pub messages: Vec<Message>,
+    pub stream: bool,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ChatResponse {
     pub model: String,
     pub created_at: String,
-    pub message: Message,
+    pub message: Option<Message>,
     pub done: bool,
+    pub error: Option<String>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -47,32 +65,39 @@ pub async fn chat_ai(
 ) -> Result<(String, Vec<Message>), Box<dyn std::error::Error>> {
     dotenv().ok();
 
-    let base_url = "http://127.0.0.1:11434";
-    let api_key = env::var("AI_API_KEY")?;
-    let model = env::var("model").unwrap_or_else(|_| "gemini-3-flash".to_string());
+    let base_url =
+        env::var("OLLAMA_BASE_URL").unwrap_or_else(|_| "http://127.0.0.1:11434".to_string());
+    let model = env::var("OLLAMA_MODEL")
+        .or_else(|_| env::var("model"))
+        .unwrap_or_else(|_| "llama3.2".to_string());
 
     let client = Client::new();
 
     let mut messages = history;
     messages.push(message);
 
-    println!("Requesting...");
+    let ollama_messages = messages
+        .iter()
+        .map(|m| Message {
+            role: m.role.as_ollama_role().to_string(),
+            content: m.content.clone(),
+        })
+        .collect::<Vec<Message>>();
+
+    let payload = OllamaChatRequest {
+        model,
+        messages: ollama_messages,
+        stream: false,
+    };
 
     let res = client
         .post(format!("{}/api/chat", base_url))
-        .json(&serde_json::json!({
-            "model": model,
-            "messages": messages,
-        }))
+        .json(&payload)
         .send()
         .await?;
 
-    println!("Request completed");
-
     let status = res.status();
     let body = res.text().await?;
-    println!("Status: {}", status);
-    println!("Response: {}", body);
 
     if !status.is_success() {
         return Err(format!("API error {}: {}", status, body).into());
@@ -80,18 +105,21 @@ pub async fn chat_ai(
 
     let request: ChatResponse = serde_json::from_str(&body)?;
 
+    if let Some(err) = request.error {
+        return Err(err.into());
+    }
+
     let response = request
-        .choices
-        .first()
-        .map(|choice| choice.message.clone())
+        .message
+        .map(|msg| msg.content)
         .ok_or("Not answered")?;
 
     messages.push(Message {
-        message: response.message.clone(),
-        role: Role::AI,
+        content: response.clone(),
+        role: self::take_role(&Role::AI).to_string(),
     });
 
-    Ok((response.message, messages))
+    Ok((response, messages))
 }
 
 pub fn chat_box(frame: &mut Frame, area: Rect, state: &ChatState) {
@@ -108,7 +136,7 @@ pub fn chat_box(frame: &mut Frame, area: Rect, state: &ChatState) {
                 Role::AI => "AI",
                 Role::User => "You",
             };
-            format!("{}: {}", who, m.message)
+            format!("{}: {}", who, m.content)
         })
         .collect::<Vec<String>>()
         .join("\n");
@@ -117,14 +145,20 @@ pub fn chat_box(frame: &mut Frame, area: Rect, state: &ChatState) {
         .block(Block::default().borders(Borders::ALL))
         .wrap(Wrap { trim: true });
 
-    let mut input = "Sending";
-    if state.sending {
-        input = "Input (sending...)";
+    let input_title = if state.sending {
+        "Input (sending...)"
     } else {
-        input = "Input (not sending...)";
-    }
+        "Input"
+    };
 
-    let input_view = Paragraph::new(input).block(Block::default().borders(Borders::ALL));
+    let input_text = if state.input.is_empty() {
+        "Type your message and press Enter".to_string()
+    } else {
+        state.input.clone()
+    };
+
+    let input_view =
+        Paragraph::new(input_text).block(Block::default().borders(Borders::ALL).title(input_title));
     frame.render_widget(chat_view, chunks[0]);
     frame.render_widget(input_view, chunks[1]);
 }
@@ -154,7 +188,7 @@ pub async fn chat_event(
 
                 match chat_ai(
                     Message {
-                        message: text,
+                        content: text,
                         role: Role::User,
                     },
                     state.history.clone(),

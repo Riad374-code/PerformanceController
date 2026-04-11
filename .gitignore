@@ -10,6 +10,7 @@ lcov.info
 # Environment files
 .env
 .env.*
+!.env.example
 
 # Logs and temp files
 *.log
