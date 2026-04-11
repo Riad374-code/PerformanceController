@@ -1,2 +1,22 @@
+# Build artifacts
 target/
+
+# Coverage outputs
+coverage/
+lcov.info
+*.profraw
+*.profdata
+
+# Environment files
 .env
+.env.*
+
+# Logs and temp files
+*.log
+*.tmp
+
+# OS and editor metadata
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
