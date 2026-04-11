@@ -1,2 +1,2 @@
-pub mod design;
 pub mod chat;
+pub mod design;

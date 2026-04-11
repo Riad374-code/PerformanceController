@@ -1,36 +1,35 @@
-use std::env;
 use crossterm::event::{Event, KeyCode, KeyEventKind};
+use dotenvy::dotenv;
+use ratatui::Frame;
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
+use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use dotenvy::dotenv;
-use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
-use ratatui::layout::{Constraint, Direction, Layout, Rect};
-use ratatui::Frame;
+use std::env;
 
-#[derive(Serialize, Deserialize, Debug,Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum Role {
     User,
     AI,
 }
 
-#[derive(Serialize, Deserialize, Debug,Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Message {
     pub message: String,
     // can be used validator, Only User or AI
     pub role: Role,
 }
 
-
 #[derive(Deserialize, Debug)]
 pub struct ChatResponse {
     choices: Vec<AssistantMessage>,
 }
 
-#[derive(Deserialize, Debug,Clone)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct AssistantMessage {
     pub model: String,
     pub created_at: String,
-    pub message:Message,
+    pub message: Message,
     pub done: bool,
 }
 
@@ -96,34 +95,38 @@ pub async fn chat_ai(
 }
 
 pub fn chat_box(frame: &mut Frame, area: Rect, state: &ChatState) {
-
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Min(1), Constraint::Length(3)])
         .split(area);
 
+    let chat_hist = state
+        .history
+        .iter()
+        .map(|m| {
+            let who = match m.role {
+                Role::AI => "AI",
+                Role::User => "You",
+            };
+            format!("{}: {}", who, m.message)
+        })
+        .collect::<Vec<String>>()
+        .join("\n");
 
-    let chat_hist= state.history.iter().map(|m|{
-        let who= match m.role{
-            Role::AI => "AI",
-            Role::User => "You",
-        };
-        format!("{}: {}",who,m.message)
-    }).collect::<Vec<String>>().join("\n");
+    let chat_view = Paragraph::new(chat_hist)
+        .block(Block::default().borders(Borders::ALL))
+        .wrap(Wrap { trim: true });
 
-    let chat_view = Paragraph::new(chat_hist).block(Block::default().borders(Borders::ALL)).wrap(Wrap { trim: true });
-
-    let mut input="Sending";
+    let mut input = "Sending";
     if state.sending {
-        input="Input (sending...)";
-    }else{
+        input = "Input (sending...)";
+    } else {
         input = "Input (not sending...)";
     }
 
-    let input_view=Paragraph::new(input).block(Block::default().borders(Borders::ALL));
+    let input_view = Paragraph::new(input).block(Block::default().borders(Borders::ALL));
     frame.render_widget(chat_view, chunks[0]);
     frame.render_widget(input_view, chunks[1]);
-
 }
 
 pub async fn chat_event(
@@ -149,10 +152,19 @@ pub async fn chat_event(
                 state.sending = true;
                 state.error = None;
 
-                match chat_ai(Message{message:text,role:Role::User},state.history.clone()).await {
+                match chat_ai(
+                    Message {
+                        message: text,
+                        role: Role::User,
+                    },
+                    state.history.clone(),
+                )
+                .await
+                {
                     Ok((.., history)) => {
-                        state.history= history;
-                        state.input.clear()},
+                        state.history = history;
+                        state.input.clear()
+                    }
                     Err(e) => state.error = Some(e.to_string()),
                 }
 
