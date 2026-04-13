@@ -37,6 +37,9 @@ async fn main() -> io::Result<()> {
             // Handle exiting chat mode (e.g., Esc key)
 
             if let Event::Key(key) = ev {
+                if key.kind != KeyEventKind::Press {
+                    continue; // Only handle key presses, ignore releases and repeats
+                }
                 if state.selected() == Some(2) {
                     if key.code == KeyCode::Up {
                         let i = match state.selected() {
@@ -62,15 +65,8 @@ async fn main() -> io::Result<()> {
                             None => 0,
                         };
                         state.select(Some(i));
-                    } else if key.code == KeyCode::Enter {
-                        if key.code == KeyCode::Esc {
-                            state.select(Some(0)); // Go back to CPU
-                            continue;
-                        } else if key.code == KeyCode::Char('q') {
-                            break;
-                        }
-                        // Otherwise, send the event to your chat logic
-                        // Note: chat_event is async, so we await it here
+                    } else {
+                        // Forward all other key presses (chars, backspace, enter) to chat input logic.
                         chat::chat_event(ev, &mut chat_state).await.ok();
                     }
                 } else {
