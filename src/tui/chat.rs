@@ -8,30 +8,25 @@ use serde::{Deserialize, Serialize};
 use std::env;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "lowercase")] // Automatically turns "User" into "user"
 pub enum Role {
     User,
+    #[serde(rename = "assistant")] // Specifically maps "AI" to "assistant" for Ollama
     AI,
-}
-
-impl Role {
-    fn as_ollama_role(&self) -> &'static str {
-        match self {
-            Role::User => "user",
-            Role::AI => "assistant",
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Message {
     pub content: String,
-    // can be used validator, Only User or AI
     pub role: Role,
 }
 
 impl Message {
-    fn take_role(role: &Role) -> &'static str {
-        role.as_ollama_role()
+    pub fn as_ollama_role(&self) -> &'static str {
+        match self.role {
+            Role::User => "user",
+            Role::AI => "assistant",
+        }
     }
 }
 
@@ -79,7 +74,7 @@ pub async fn chat_ai(
     let ollama_messages = messages
         .iter()
         .map(|m| Message {
-            role: m.role.as_ollama_role().to_string(),
+            role: m.role.clone(),
             content: m.content.clone(),
         })
         .collect::<Vec<Message>>();
@@ -116,7 +111,7 @@ pub async fn chat_ai(
 
     messages.push(Message {
         content: response.clone(),
-        role: self::take_role(&Role::AI).to_string(),
+        role: Role::AI,
     });
 
     Ok((response, messages))
@@ -131,7 +126,7 @@ pub fn chat_box(frame: &mut Frame, area: Rect, state: &ChatState) {
     let chat_hist = state
         .history
         .iter()
-        .map(|m| format!("{}: {}", m.role.as_ollama_role(), m.content))
+        .map(|m| format!("{}: {}", m.as_ollama_role(), m.content))
         .collect::<Vec<String>>()
         .join("\n");
 

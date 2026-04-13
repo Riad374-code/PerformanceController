@@ -18,11 +18,11 @@ pub fn init() -> Terminal<CrosstermBackend<Stdout>> {
     terminal
 }
 
-pub fn frame_divider() -> Rc<[Rect]> {
+pub fn frame_divider(area: Rect) -> Rc<[Rect]> {
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref())
-        .split(Rect::new(0, 0, 150, 40));
+        .split(area);
     chunks
 }
 
@@ -71,7 +71,7 @@ pub fn draw_terminal(
     state: &mut ListState, // Pass by reference!
 ) -> io::Result<()> {
     terminal.draw(|f| {
-        let chunks = frame_divider();
+        let chunks = frame_divider(f.area());
 
         // Use state.selected() to drive your logic
         let selected_index = state.selected().unwrap_or(0);

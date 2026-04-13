@@ -25,6 +25,7 @@ async fn main() -> io::Result<()> {
     let mut selected_index: usize = 0;
     let mut chat_state = ChatState::default();
     let mut state = ListState::default();
+    state.select(Some(0)); // Start with the first item selected
     loop {
         design::draw_terminal(&mut terminal, chat_state.clone(), &mut state)?;
 
@@ -85,7 +86,7 @@ async fn main() -> io::Result<()> {
                                             i - 1
                                         }
                                     }
-                                    Option::<i32>::None => 0,
+                                    None => 0,
                                 };
                                 state.select(Some(i));
                             }
@@ -98,7 +99,7 @@ async fn main() -> io::Result<()> {
                                             i + 1
                                         }
                                     }
-                                    Option::<i32>::None => 0,
+                                    None => 0,
                                 };
                                 state.select(Some(i));
                             }
@@ -112,6 +113,7 @@ async fn main() -> io::Result<()> {
     }
 
     disable_raw_mode()?;
+    Ok(())
 }
 
 /**/

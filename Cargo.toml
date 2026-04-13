@@ -8,7 +8,7 @@ tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "fmt", "registry"] }
 sysinfo = "0.38.4"
 nvml-wrapper = { version = "0.12.1", features = ["legacy-functions"] }
-serde = "1.0.228"
+serde = { version = "1.0.228", features = ["derive"] }
 ratatui = "0.30.0"
 crossterm = "0.29.0"
 ratatui-core = "0.1.0"
