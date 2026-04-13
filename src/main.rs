@@ -14,6 +14,7 @@ use std::time::Duration;
 use tui::chat::{Message, chat_ai};
 use tui::{chat, design};
 
+use component_details::gpu::get_gpu_details;
 use trainable_model_integ::gpu_detailing::{Errors, get_perandtemp};
 //-> std::io::Result<()>
 
@@ -69,7 +70,7 @@ async fn main() -> io::Result<()> {
                         // Forward all other key presses (chars, backspace, enter) to chat input logic.
                         chat::chat_event(ev, &mut chat_state).await.ok();
                     }
-                } else if{
+                } else if state.selected() == Some(1) {
                     if key.code == KeyCode::Up {
                         let i = match state.selected() {
                             Some(i) => {
@@ -95,10 +96,10 @@ async fn main() -> io::Result<()> {
                         };
                         state.select(Some(i));
                     } else {
-                        // Forward all other key presses (chars, backspace, enter) to chat input logic.
-                        chat::chat_event(ev, &mut chat_state).await.ok();
+                        // Forward all other key presses to GPU details logic.
+                        get_gpu_details(ev, &mut state).ok();
                     }
-                }else {
+                } else {
                     // Standard menu navigation
                     if let Event::Key(key) = ev {
                         match key.code {
