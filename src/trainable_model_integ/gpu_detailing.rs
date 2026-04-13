@@ -6,10 +6,10 @@ use std::fs::{File, OpenOptions};
 use std::path::{Path, PathBuf};
 
 #[derive(Serialize)]
-struct GpuDetailingVisitor {
-    temprature: u32,
-    power_usage: u32,
-    usage_percent: u32,
+pub struct GpuDetailingVisitor {
+    pub temprature: u32,
+    pub power_usage: u32,
+    pub usage_percent: u32,
 }
 
 #[derive(Debug)]
