@@ -69,7 +69,36 @@ async fn main() -> io::Result<()> {
                         // Forward all other key presses (chars, backspace, enter) to chat input logic.
                         chat::chat_event(ev, &mut chat_state).await.ok();
                     }
-                } else {
+                } else if{
+                    if key.code == KeyCode::Up {
+                        let i = match state.selected() {
+                            Some(i) => {
+                                if i == 0 {
+                                    3
+                                } else {
+                                    i - 1
+                                }
+                            }
+                            None => 0,
+                        };
+                        state.select(Some(i));
+                    } else if key.code == KeyCode::Down {
+                        let i = match state.selected() {
+                            Some(i) => {
+                                if i >= 3 {
+                                    0
+                                } else {
+                                    i + 1
+                                }
+                            }
+                            None => 0,
+                        };
+                        state.select(Some(i));
+                    } else {
+                        // Forward all other key presses (chars, backspace, enter) to chat input logic.
+                        chat::chat_event(ev, &mut chat_state).await.ok();
+                    }
+                }else {
                     // Standard menu navigation
                     if let Event::Key(key) = ev {
                         match key.code {
