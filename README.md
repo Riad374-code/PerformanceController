@@ -129,4 +129,4 @@ src/
 
 ## License
 
-This project is currently unlicensed. See the repository for more details.
+This project is licensed under the [MIT License](LICENSE).
